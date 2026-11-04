@@ -1,0 +1,554 @@
+# =============================================================================
+# eval/testcases.yaml —— RAG Research Agent 分层评测集（5 类 × 12 条 = 60 条）
+# =============================================================================
+#
+# 【字段说明】
+#   id                   : 全局唯一 ID，命名规则 <类前缀>_<两位序号>
+#                          前缀：cs=cross_section, et=exact_term, mt=multi_turn,
+#                                na=no_answer, pe=permission
+#   category             : 五选一（英文枚举值，见下方【类别定义】）
+#   question             : 当前轮的用户提问。要写得像真实用户口吻，不要直接抄文档标题
+#   history              : 可选，多轮对话的历史轮次（字符串列表，按时间正序）。
+#                          只有 multi_turn 类别必须带；其余类别留空或省略
+#   expected_doc_uuids   : 期望被召回的文档 uuid 列表。
+#                          uuid 的算法 = md5(page_content) → 转成标准 uuid 字符串，
+#                          即 src/shared/state.py 里的 _generate_uuid()。
+#                          语料仅 32 篇，uuid 全部来自 src/sample_docs.json
+#   expected_answer_hint : 可选，参考答案要点。生成侧评测（context_recall）用它当参照
+#   user_id              : 可选，发起请求的用户
+#   allowed_user_ids     : 可选，该用户被允许看到的文档 owner 列表（权限过滤用）
+#   TODO                 : 布尔。true = 占位条目，run_eval.py 会跳过并计入 skipped
+#
+# 【类别定义】
+#   cross_section : 跨小节 / 跨文档的综合问题，答案需要合并多处信息
+#   exact_term    : 精确术语、缩写、符号查找（如 config_schema、input_schema、add_messages）
+#   multi_turn    : 多轮指代追问，必须带 history 字段
+#   no_answer     : 语料里确实没有答案，期望系统拒答而不是编造（expected_doc_uuids 留空）
+#   permission    : 越权访问用例，带 user_id + allowed_user_ids，期望被过滤掉
+#
+# 【填写规则】
+#   1. expected_doc_uuids 必须能在 src/sample_docs.json 里按 _generate_uuid 规则算出来，
+#      不要凭印象填。可以用下面的命令核对：
+#        .\.venv\Scripts\python.exe -c "import json,sys; sys.path.insert(0,'src'); from shared.state import _generate_uuid; [print(_generate_uuid(d['page_content']), d['page_content'][:60].replace(chr(10),' ')) for d in json.load(open('src/sample_docs.json',encoding='utf-8'))]"
+#   2. 一条用例的 expected_doc_uuids 只放「确实包含答案」的文档，不要为了凑数把相关但不含答案的文档塞进来，
+#      否则 Recall / nDCG / MRR 会被虚高或无意义地拉低。
+#   3. 补完一条用例后把 TODO 改成 false（或整行删掉），run_eval.py 才会真正评它。
+#   4. no_answer 类别的 expected_doc_uuids 必须是空列表 []；它不参与检索指标，
+#      只统计「是否正确拒答」。
+#   5. permission 类别需要语料带 owner 元数据才有意义；当前 src/sample_docs.json
+#      的 metadata 只有 source 字段，没有 owner / allowed_user_ids，
+#      所以这一类的 12 条全部是 TODO 占位，需要先给语料补 ACL 元数据才能真正启用。
+#      详见 eval/README.md 的「已知限制」。
+#
+# 【当前填写状态】真实可用 24 条 / TODO 占位 36 条
+#   cross_section 7 真 + 5 TODO | exact_term 8 真 + 4 TODO | multi_turn 4 真 + 8 TODO
+#   no_answer     5 真 + 7 TODO | permission 0 真 + 12 TODO
+# =============================================================================
+
+meta:
+  version: 1
+  corpus: src/sample_docs.json
+  corpus_size: 32
+  total_cases: 60
+  uuid_rule: "md5(page_content) -> uuid.UUID"  # 见 src/shared/state.py::_generate_uuid
+
+cases:
+  # ---------------------------------------------------------------------------
+  # cross_section —— 跨小节 / 跨文档综合（7 条真实可用）
+  # ---------------------------------------------------------------------------
+  - id: cs_01
+    category: cross_section
+    question: "我有一批要处理的对象，想让同一层的几个节点同时跑起来，LangGraph 里该怎么写？它和 LangChain 链里那种并行是一回事吗？"
+    expected_doc_uuids:
+      - f8b51515-e326-3361-9f69-795a87212082   # 24: 一个节点多条出边 → 下一个 superstep 并行
+      - d683ad55-fbc6-2d7f-3d2d-03b47a82190d   # 20: LCEL 的 optimized parallel execution
+    expected_answer_hint: "LangGraph 中一个节点有多条出边时，所有目标节点会在下一个 superstep 里并行执行；LangChain 的 LCEL 也会把可并行的步骤做优化并行执行。两者都是并行，但 LangGraph 是按图结构决定并行、LCEL 是按链的依赖关系决定并行。"
+    TODO: false
+
+  - id: cs_02
+    category: cross_section
+    question: "同一张图我想在运行时切成不同的大模型，不想改代码，config_schema 这条路怎么走？配置到底怎么传进图里、又怎么在节点里读到？"
+    expected_doc_uuids:
+      - 36c3bce7-8896-906e-13d4-07dfd2af0855   # 5: StateGraph(State, config_schema=ConfigSchema) + 节点内读取
+      - 6ee46061-138a-5b3c-e23c-1fef1489cfc4   # 28: config_schema 让一张图切多模型
+    expected_answer_hint: "用 StateGraph(State, config_schema=ConfigSchema) 声明可配置字段，调用时通过 config={'configurable': {...}} 传入，节点函数里用 config.get('configurable', {}).get('llm') 读到。"
+    TODO: false
+
+  - id: cs_03
+    category: cross_section
+    question: "state 到底该怎么声明？我看过 TypedDict 加 Annotated 的写法，也见过直接继承 MessagesState 的，这两种分别什么时候用？"
+    expected_doc_uuids:
+      - 69d5fd0f-5b9d-2fba-6111-1737354195cd   # 26: TypedDict + Annotated reducer / MessagesState
+      - f8b51515-e326-3361-9f69-795a87212082   # 24: class State(MessagesState) 追加字段
+      - 38d2d271-936e-8fa7-8759-a92098869995   # 13: Annotated 与 input/output/private state
+    expected_answer_hint: "TypedDict 是基础写法，字段要合并而不是覆盖时用 Annotated[类型, reducer] 指定 reducer；MessagesState 是预置的、带 add_messages reducer 的状态，适合以消息列表为核心的对话场景，可以在它基础上再加自己的字段。"
+    TODO: false
+
+  - id: cs_04
+    category: cross_section
+    question: "条件边不是只要返回节点名就行了吗？那要是我在运行时才能确定到底有几个下游节点，比如一条记录拆成好几份并行处理，该怎么办？"
+    expected_doc_uuids:
+      - 6ee46061-138a-5b3c-e23c-1fef1489cfc4   # 28: Send 对象 / map-reduce
+      - f8b51515-e326-3361-9f69-795a87212082   # 24: add_conditional_edges 与 routing_function
+    expected_answer_hint: "普通条件边返回节点名或节点名列表；如果下游数量在运行时才确定，就从条件边返回 Send 对象列表，Send(节点名, 该节点的状态) 用来实现 map-reduce 式的动态 fan-out。"
+    TODO: false
+
+  - id: cs_05
+    category: cross_section
+    question: "检索出来的结果质量不行，除了把向量库整个换掉，还有哪些提升召回或精度的手段？"
+    expected_doc_uuids:
+      - 194336bc-0e85-c732-539f-88670dad1746   # 15: ColBERT / contextual compression / rerank / ensemble
+      - 9a609ce2-36eb-816d-a502-7fd59f47994e   # 04: 各种 retriever 索引类型对比表
+      - bcc2febd-0b26-f1c4-e73a-5e4325d81ad8   # 30: Corrective RAG 等检索后自纠正范式
+    expected_answer_hint: "可以用 rerank 重排、contextual compression 压缩上下文、ColBERT 这类更细粒度的向量、ensemble 组合多个检索器；检索后还可以上 Corrective RAG 之类的自纠正范式，检索不到就回退到别的来源。"
+    TODO: false
+
+  - id: cs_06
+    category: cross_section
+    question: "做个前端要实时显示进度，LangGraph 执行过程中能把每个节点跑完的信息推出来吗？LangChain 那边能不能细到 token？"
+    expected_doc_uuids:
+      - 36c3bce7-8896-906e-13d4-07dfd2af0855   # 5: LangGraph 内建 streaming
+      - e83331e8-546b-c93c-3e94-7e3d56013344   # 06: .astream_events() 事件级
+      - bdef69bd-bc28-257b-c5cc-5c9568e5325b   # 02: model.stream() 逐 chunk（token 级）
+    expected_answer_hint: "LangGraph 支持流式输出节点的更新；LangChain 侧 model.stream() 可以逐 chunk 吐 token，.astream_events() 能拿到事件级别的细粒度信息，适合做前端进度展示。"
+    TODO: false
+
+  - id: cs_07
+    category: cross_section
+    question: "多轮对话要记住上下文，而且不同用户之间不能串，LangGraph 里的持久化和存储分别该用哪个？"
+    expected_doc_uuids:
+      - 6ee46061-138a-5b3c-e23c-1fef1489cfc4   # 28: persistence / threads / BaseStore
+      - 91cd831a-6ef7-da9e-c964-a66d5a62ff8c   # 10: checkpointer 概念
+      - 917e7b82-b3c1-607d-e776-693f49c65d35   # 16: BaseStore
+    expected_answer_hint: "checkpointer 按 thread_id 保存每个 superstep 的图状态，用来做会话记忆和断点续跑；BaseStore 用自定义 namespace 做跨线程的长期存储。用户隔离靠不同的 thread_id 与 namespace。"
+    TODO: false
+
+  - id: cs_08
+    category: cross_section
+    question: "TODO-待补：跨文档综合题（例如把「如何控制图什么时候停」在 low_level 各小节里的说法合并起来）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: cs_09
+    category: cross_section
+    question: "TODO-待补：跨文档综合题（例如对比 LangGraph 的图编排与 LangChain 的 LCEL 各自适合什么场景）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: cs_10
+    category: cross_section
+    question: "TODO-待补：跨文档综合题（例如把「提示词模板」和「示例选择器」两块串起来问）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: cs_11
+    category: cross_section
+    question: "TODO-待补：跨文档综合题（例如工具调用在「怎么让模型返回结构化数据」里的多种用法对比）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: cs_12
+    category: cross_section
+    question: "TODO-待补：跨文档综合题（例如文档加载 → 切分 → 向量化 → 检索这条链路上每一环的可选项）"
+    expected_doc_uuids: []
+    TODO: true
+
+  # ---------------------------------------------------------------------------
+  # exact_term —— 精确术语 / 缩写 / 符号查找（8 条真实可用）
+  # ---------------------------------------------------------------------------
+  - id: et_01
+    category: exact_term
+    question: "input_schema 和 output_schema 这两个属性是干嘛的？在哪能看一个 Runnable 的输入输出结构？"
+    expected_doc_uuids:
+      - 984e9cc8-c8d1-9918-0386-2c2eb18fa261   # 00: input_schema / output_schema 定义
+    expected_answer_hint: "所有 runnable 都暴露 input 和 output schema：input_schema 是自动生成的输入 Pydantic 模型，output_schema 是对应的输出模型。"
+    TODO: false
+
+  - id: et_02
+    category: exact_term
+    question: "messages 这个字段如果直接用 operator.add，人工改一条旧消息会变成重复追加，有没有现成的 reducer 能处理这种情况？"
+    expected_doc_uuids:
+      - 69d5fd0f-5b9d-2fba-6111-1737354195cd   # 26: add_messages 会按 message id 覆盖
+    expected_answer_hint: "用 add_messages。新消息直接追加，已有 id 的消息则做更新（覆盖）而不是重复追加，同时它还会反序列化成 LangChain 的 Message 对象。"
+    TODO: false
+
+  - id: et_03
+    category: exact_term
+    question: "config_schema 这个参数具体是挂在哪个类的构造函数上的？怎么写？"
+    expected_doc_uuids:
+      - 36c3bce7-8896-906e-13d4-07dfd2af0855   # 5: StateGraph(State, config_schema=ConfigSchema)
+      - 6ee46061-138a-5b3c-e23c-1fef1489cfc4   # 28: 同一个写法
+    expected_answer_hint: "挂在 StateGraph 的构造函数上：graph = StateGraph(State, config_schema=ConfigSchema)。"
+    TODO: false
+
+  - id: et_04
+    category: exact_term
+    question: "跑图时报了 GraphRecursionError，说是步数超了，默认上限到底是多少？想调大应该改哪里？"
+    expected_doc_uuids:
+      - 36c3bce7-8896-906e-13d4-07dfd2af0855   # 5: recursion_limit 默认 25
+    expected_answer_hint: "recursion_limit 默认 25 步，超过就抛 GraphRecursionError。它在运行时通过 invoke/stream 的 config 字典传入，是独立的 config 键，不要放进 configurable 里面。"
+    TODO: false
+
+  - id: et_05
+    category: exact_term
+    question: "想在某个节点执行之前暂停，让人工确认一下再继续，interrupt_before 是在哪一步设置的？还需要额外配什么？"
+    expected_doc_uuids:
+      - 36c3bce7-8896-906e-13d4-07dfd2af0855   # 5: interrupt_before / interrupt_after / 需要 checkpointer
+    expected_answer_hint: "在 compile 图的时候设置，interrupt_before 在节点执行前中断、interrupt_after 在执行后中断。必须配 checkpointer，否则无法恢复；恢复时用 None 作为输入再 invoke 一次。"
+    TODO: false
+
+  - id: et_06
+    category: exact_term
+    question: "手上已经有一个向量库对象了，怎么把它当成 retriever 用？"
+    expected_doc_uuids:
+      - 917e7b82-b3c1-607d-e776-693f49c65d35   # 16: vectorstore.as_retriever()
+    expected_answer_hint: "调用 retriever = vectorstore.as_retriever()，就能把向量库转成统一的 retriever 接口。"
+    TODO: false
+
+  - id: et_07
+    category: exact_term
+    question: "想让模型直接返回一个结构化的对象而不是一段文本，with_structured_output() 这个方法是干嘛的、怎么用？"
+    expected_doc_uuids:
+      - 7fe1c811-e5ff-25a0-556a-f0204544bfa9   # 19: .with_structured_output()
+      - c3e5f500-11b0-a6db-a8af-753341b6e561   # 14: tool calling 与自定义 schema
+    expected_answer_hint: "with_structured_output() 把 schema 直接绑到模型上，返回的就是符合该 schema 的对象，底层走的是工具调用或 JSON mode。"
+    TODO: false
+
+  - id: et_08
+    category: exact_term
+    question: "ColBERT 这种检索方式跟普通向量检索有什么区别，什么场景值得上？"
+    expected_doc_uuids:
+      - 194336bc-0e85-c732-539f-88670dad1746   # 15: ColBERT 说明
+      - 9a609ce2-36eb-816d-a502-7fd59f47994e   # 04: retriever 类型对比表里的 ColBERT 条目
+    expected_answer_hint: "ColBERT 用受上下文影响的 token 级 embedding，粒度比整段向量更细，适合需要更高粒度 embedding 的场景。"
+    TODO: false
+
+  - id: et_09
+    category: exact_term
+    question: "TODO-待补：精确术语查找（例如 JSON mode 具体怎么开）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: et_10
+    category: exact_term
+    question: "TODO-待补：精确术语查找（例如 NodeInterrupt 的用法）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: et_11
+    category: exact_term
+    question: "TODO-待补：精确术语查找（例如 output parser 有哪些、分别什么输出类型）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: et_12
+    category: exact_term
+    question: "TODO-待补：精确符号查找（例如 START / END 这两个虚拟节点）"
+    expected_doc_uuids: []
+    TODO: true
+
+  # ---------------------------------------------------------------------------
+  # multi_turn —— 多轮指代追问（4 条真实可用，必须带 history）
+  # ---------------------------------------------------------------------------
+  - id: mt_01
+    category: multi_turn
+    question: "那它和边有什么区别？"
+    history:
+      - "LangGraph 里节点是怎么定义的？"
+    expected_doc_uuids:
+      - f8b51515-e326-3361-9f69-795a87212082   # 24: 同一篇里同时讲 Nodes 和 Edges
+    expected_answer_hint: "节点是 python 函数（可带 config 参数）描述「做什么」，用 add_node 加入；边描述「控制流怎么走」，用 add_edge / add_conditional_edges 连接节点，决定路由和何时停止。"
+    TODO: false
+
+  - id: mt_02
+    category: multi_turn
+    question: "如果我有个字段希望每次更新都往上加，而不是被覆盖掉呢？"
+    history:
+      - "图里的状态该怎么声明？"
+    expected_doc_uuids:
+      - 69d5fd0f-5b9d-2fba-6111-1737354195cd   # 26: Annotated + reducer 实现累加
+    expected_answer_hint: "用 Annotated[list[str], add] 这种写法给该字段指定 reducer（operator.add），更新时就会做加法而不是覆盖；没写 reducer 的字段每次更新都会被覆盖。"
+    TODO: false
+
+  - id: mt_03
+    category: multi_turn
+    question: "可我运行时才知道要分几路，返回值不只是一个节点名，该怎么办？"
+    history:
+      - "条件边怎么根据函数返回值决定下一步去哪？"
+    expected_doc_uuids:
+      - 6ee46061-138a-5b3c-e23c-1fef1489cfc4   # 28: Send
+      - f8b51515-e326-3361-9f69-795a87212082   # 24: 条件边基础
+    expected_answer_hint: "让 routing_function 返回 Send 对象列表，每个 Send(节点名, 状态) 对应一路，它们会在下一个 superstep 并行执行。"
+    TODO: false
+
+  - id: mt_04
+    category: multi_turn
+    question: "那我在节点函数里怎么把 config_schema 里声明的值读出来？"
+    history:
+      - "怎么给图传运行时的配置参数？"
+    expected_doc_uuids:
+      - 36c3bce7-8896-906e-13d4-07dfd2af0855   # 5: 节点里 config.get("configurable", {})
+      - 6ee46061-138a-5b3c-e23c-1fef1489cfc4   # 28: config_schema 声明
+    expected_answer_hint: "节点函数第二个位置参数就是 config，用 config.get('configurable', {}).get('llm', 'openai') 这样读；configurable 的值来自 invoke 时传的 config。"
+    TODO: false
+
+  - id: mt_05
+    category: multi_turn
+    question: "TODO-待补：指代追问（历史问「怎么让图停下来或结束」，追问「那 END 和直接不连边有区别吗」）"
+    history:
+      - "TODO-待补：历史轮问题"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: mt_06
+    category: multi_turn
+    question: "TODO-待补：指代追问（历史问「checkpointer 是什么」，追问「那它和 BaseStore 存的到底有什么不一样」）"
+    history:
+      - "TODO-待补：历史轮问题"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: mt_07
+    category: multi_turn
+    question: "TODO-待补：指代追问（历史问「工具调用怎么定义」，追问「那工具的参数 schema 是自动从哪来的」）"
+    history:
+      - "TODO-待补：历史轮问题"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: mt_08
+    category: multi_turn
+    question: "TODO-待补：指代追问（历史问「怎么做流式输出」，追问「那我想只拿节点级的更新、不要 token 级，用哪个方法」）"
+    history:
+      - "TODO-待补：历史轮问题"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: mt_09
+    category: multi_turn
+    question: "TODO-待补：指代追问（历史问「提示词模板怎么写」，追问「那示例怎么按输入动态挑」）"
+    history:
+      - "TODO-待补：历史轮问题"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: mt_10
+    category: multi_turn
+    question: "TODO-待补：指代追问（历史问「文档怎么加载」，追问「那加载完怎么切块更适合检索」）"
+    history:
+      - "TODO-待补：历史轮问题"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: mt_11
+    category: multi_turn
+    question: "TODO-待补：指代追问（历史问「怎么给状态加字段」，追问「那我子图里的私有状态外面能看到吗」）"
+    history:
+      - "TODO-待补：历史轮问题"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: mt_12
+    category: multi_turn
+    question: "TODO-待补：指代追问（历史问「agent 和 chain 的区别」，追问「那我应该迁到 LangGraph 吗」）"
+    history:
+      - "TODO-待补：历史轮问题"
+    expected_doc_uuids: []
+    TODO: true
+
+  # ---------------------------------------------------------------------------
+  # no_answer —— 语料里没有答案，期望拒答（5 条真实可用）
+  # 说明：expected_doc_uuids 必须为空；不参与检索指标，只统计「是否正确拒答」。
+  # 已核实下列关键词在 32 篇语料中均不出现：redis / milvus / prometheus / kubernetes / text-embedding
+  # ---------------------------------------------------------------------------
+  - id: na_01
+    category: no_answer
+    question: "LangGraph 的 checkpointer 换成 Redis 后端该怎么配？"
+    expected_doc_uuids: []
+    expected_answer_hint: "语料只讲 checkpointer 的概念，没有 Redis 后端的任何配置方法，正确行为是说明资料里没有这部分内容。"
+    TODO: false
+
+  - id: na_02
+    category: no_answer
+    question: "想接 Milvus 做向量库，LangChain 这边怎么初始化？"
+    expected_doc_uuids: []
+    expected_answer_hint: "语料没有 Milvus 的集成说明，正确行为是拒答或明确说没有。"
+    TODO: false
+
+  - id: na_03
+    category: no_answer
+    question: "怎么接 Prometheus，把每次模型调用的耗时打点上报出去？"
+    expected_doc_uuids: []
+    expected_answer_hint: "语料没有 Prometheus 监控相关的内容，正确行为是拒答。"
+    TODO: false
+
+  - id: na_04
+    category: no_answer
+    question: "这套东西要部署到 Kubernetes，需要准备哪些配置文件？"
+    expected_doc_uuids: []
+    expected_answer_hint: "语料没有任何 Kubernetes 部署内容，正确行为是拒答。"
+    TODO: false
+
+  - id: na_05
+    category: no_answer
+    question: "text-embedding-v4 支持哪几个维度的输出？"
+    expected_doc_uuids: []
+    expected_answer_hint: "语料没有 text-embedding-v4 或其维度参数的说明，正确行为是拒答。"
+    TODO: false
+
+  - id: na_06
+    category: no_answer
+    question: "TODO-待补：语料无答案的问题（例如 pgvector 在本地怎么装）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: na_07
+    category: no_answer
+    question: "TODO-待补：语料无答案的问题（例如 Qdrant 的 collection 怎么建索引）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: na_08
+    category: no_answer
+    question: "TODO-待补：语料无答案的问题（例如怎么用 OpenTelemetry 做 tracing）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: na_09
+    category: no_answer
+    question: "TODO-待补：语料无答案的问题（例如这个库的许可证是什么、商用要不要付费）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: na_10
+    category: no_answer
+    question: "TODO-待补：语料无答案的问题（例如 Grafana 看板怎么配）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: na_11
+    category: no_answer
+    question: "TODO-待补：语料无答案的问题（例如怎么把模型换成自建的 vLLM 服务）"
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: na_12
+    category: no_answer
+    question: "TODO-待补：语料无答案的问题（例如这个项目的 CI 流水线怎么配）"
+    expected_doc_uuids: []
+    TODO: true
+
+  # ---------------------------------------------------------------------------
+  # permission —— 越权访问（12 条全部 TODO 占位）
+  # 当前语料 metadata 只有 source，没有 owner_user_id / allowed_user_ids，
+  # 因此无法真正构造「命中该文档但应被过滤」的断言。补齐语料 ACL 元数据后
+  # 把 expected_doc_uuids 填成「本应被过滤掉的那篇文档」再置 TODO: false。
+  # ---------------------------------------------------------------------------
+  - id: pe_01
+    category: permission
+    question: "这个内部文档里写的部署参数是什么？"
+    user_id: alice
+    allowed_user_ids:
+      - bob
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_02
+    category: permission
+    question: "帮我看下别人空间里那份检索配置怎么写的？"
+    user_id: alice
+    allowed_user_ids:
+      - carol
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_03
+    category: permission
+    question: "把全组的密钥轮换流程贴出来"
+    user_id: alice
+    allowed_user_ids:
+      - dave
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_04
+    category: permission
+    question: "另一条业务线的索引名和分片数是多少？"
+    user_id: bob
+    allowed_user_ids:
+      - alice
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_05
+    category: permission
+    question: "查一下 HR 那份裁员计划的附件"
+    user_id: bob
+    allowed_user_ids:
+      - carol
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_06
+    category: permission
+    question: "财务那边的对账口径文档发我看看"
+    user_id: carol
+    allowed_user_ids:
+      - dave
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_07
+    category: permission
+    question: "安全组里那份渗透测试报告结论是什么？"
+    user_id: carol
+    allowed_user_ids:
+      - alice
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_08
+    category: permission
+    question: "客户合同里约定的 SLA 是几个 9？"
+    user_id: dave
+    allowed_user_ids:
+      - bob
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_09
+    category: permission
+    question: "运维台账里记录的上一任负责人是谁？"
+    user_id: dave
+    allowed_user_ids:
+      - alice
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_10
+    category: permission
+    question: "把未公开的定价策略原文给我"
+    user_id: erin
+    allowed_user_ids:
+      - alice
+      - bob
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_11
+    category: permission
+    question: "内部版本路线图里 Q3 要下线哪些接口？"
+    user_id: erin
+    allowed_user_ids:
+      - carol
+    expected_doc_uuids: []
+    TODO: true
+
+  - id: pe_12
+    category: permission
+    question: "帮我调出那个项目的完整审计日志"
+    user_id: erin
+    allowed_user_ids:
+      - dave
+    expected_doc_uuids: []
+    TODO: true

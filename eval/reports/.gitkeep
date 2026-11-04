@@ -1,0 +1,5 @@
+# 占位文件：保留 reports 目录
+
+Windows 沙箱下 `os.makedirs()` 创建新目录会被拒绝（WinError 5），
+但这个目录一旦存在，往里面写文件是允许的。
+所以先用它把目录建出来，`run_eval.py` 的 `makedirs(..., exist_ok=True)` 就能正常通过。

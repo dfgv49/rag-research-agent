@@ -1,0 +1,457 @@
+meta:
+  name: synthetic
+  corpus: src\sample_docs_large.json
+  corpus_size: 229
+  model: dashscope/qwen-plus
+  seed: 20261020
+  n_requested: 60
+  n_generated: 60
+  warning: 合成集：问题由读过源文档的 LLM 生成，绝对 recall 偏高，仅用于 A/B 相对比较
+cases:
+- id: sy_001
+  category: cross_section
+  question: 我该选 LangGraph 还是 LangChain 来做需要长期运行、带人工干预的智能体？
+  expected_doc_uuids:
+  - 07fd352b-5b8d-068a-f692-26255d2decf7
+  expected_answer_hint: （合成）来自文档：Runtimes, frameworks, and harnesses
+  TODO: false
+- id: sy_002
+  category: cross_section
+  question: 我让内容生成Agent写完文章后，它能自动配图并存到项目文件夹里吗？
+  expected_doc_uuids:
+  - dd04cdb4-276e-54d8-8164-8c9c2c7ecbc9
+  expected_answer_hint: （合成）来自文档：Build a content builder agent
+  TODO: false
+- id: sy_003
+  category: exact_term
+  question: 我该用哪个文本切分器作为默认选择，才能既保持段落完整又控制好 chunk 大小？
+  expected_doc_uuids:
+  - 9d8e85c2-ebdb-719f-2903-8d3a8d1e93a2
+  expected_answer_hint: （合成）来自文档：Text splitter integrations
+  TODO: false
+- id: sy_004
+  category: cross_section
+  question: 我的数据分析 agent 怎么才能让画图任务不卡住主流程，还能单独跑？
+  expected_doc_uuids:
+  - e6777aa9-9902-d60a-a82d-09cb63d89073
+  expected_answer_hint: （合成）来自文档：Build a data analysis agent from scratch
+  TODO: false
+- id: sy_mt_005
+  category: multi_turn
+  question: 它和那个StateGraph类有啥关系？
+  history:
+  - LangGraph里的State、Nodes和Edges分别是什么作用？
+  expected_doc_uuids:
+  - 0a698081-95e7-8af8-0478-152043ab1ade
+  expected_answer_hint: （合成）来自文档：Graph API overview
+  TODO: false
+- id: sy_006
+  category: exact_term
+  question: 我给 Managed Deep Agent 加了 Parallel 搜索，为啥还要配 LangSmith 的 workspace ID 和
+    API key，Parallel 自己的 key 反而不用？
+  expected_doc_uuids:
+  - 319f6961-260b-1424-dc2a-216319a64b0b
+  expected_answer_hint: （合成）来自文档：Built-in search powered by Parallel
+  TODO: false
+- id: sy_007
+  category: cross_section
+  question: 升级到 LangGraph v1 后，原来用 create_react_agent 的地方该怎么改调用方式？
+  expected_doc_uuids:
+  - b067ca0e-f877-859e-f284-b51a9967a46a
+  expected_answer_hint: （合成）来自文档：LangGraph v1 migration guide
+  TODO: false
+- id: sy_008
+  category: cross_section
+  question: 我怎么让 OpenWiki 跳过生成的临时文件和私有配置目录？
+  expected_doc_uuids:
+  - 370b56f5-d203-214b-c14c-8176b752fe60
+  expected_answer_hint: （合成）来自文档：Customize OpenWiki
+  TODO: false
+- id: sy_009
+  category: cross_section
+  question: 我想做个能自动分析PDF并回答问题的工具，该用LangChain还是LangGraph来实现？
+  expected_doc_uuids:
+  - 41c0d572-5bd4-facb-d699-ccb1cdc31957
+  expected_answer_hint: （合成）来自文档：Learn
+  TODO: false
+- id: sy_mt_010
+  category: multi_turn
+  question: 它俩在实际使用时哪个更省事？
+  history:
+  - Human-in-the-loop 里的 per-call 和 batched 这两种暂停模式有啥区别？
+  expected_doc_uuids:
+  - df70dde6-af2f-6398-8648-710e672d1b2a
+  expected_answer_hint: （合成）来自文档：Human-in-the-loop overview
+  TODO: false
+- id: sy_011
+  category: cross_section
+  question: 我用 stream.subagents 遍历子智能体时，怎么拿到每个子任务的最终结果？
+  expected_doc_uuids:
+  - f8bd1870-1b94-9d2a-d28c-857106b62db2
+  expected_answer_hint: （合成）来自文档：Event streaming
+  TODO: false
+- id: sy_012
+  category: exact_term
+  question: 我想给LangChain加个内容审核功能，该用哪个现成的中间件包？
+  expected_doc_uuids:
+  - 94fca3ad-9615-8f4f-c770-65a1641ffd1b
+  expected_answer_hint: （合成）来自文档：Middleware integrations
+  TODO: false
+- id: sy_013
+  category: cross_section
+  question: Agent调用工具时，前端怎么自动显示加载中、成功或失败的不同UI？
+  expected_doc_uuids:
+  - 0af4ac10-e1c1-269f-12ad-58d30d045061
+  expected_answer_hint: （合成）来自文档：Controlled generative UI
+  TODO: false
+- id: sy_014
+  category: cross_section
+  question: 我用 InMemoryStore 存了用户偏好，但重启服务后数据就没了，咋让这些数据一直保留？
+  expected_doc_uuids:
+  - cef36657-fbf8-591d-85a5-04bb342a9548
+  expected_answer_hint: （合成）来自文档：Stores
+  TODO: false
+- id: sy_mt_015
+  category: multi_turn
+  question: 它需要哪些环境变量才能正常部署？
+  history:
+  - 这个 mda 命令是干啥的？
+  expected_doc_uuids:
+  - 311d9873-f985-a16c-a6b9-e18c23b745c2
+  expected_answer_hint: （合成）来自文档：Managed Deep Agents CLI reference
+  TODO: false
+- id: sy_016
+  category: cross_section
+  question: 我升级到 LangChain v1 后，原来用的 create_react_agent 报错，该怎么改调用方式？
+  expected_doc_uuids:
+  - 90418337-3d8d-6da5-abda-3d0fd3f14026
+  expected_answer_hint: （合成）来自文档：LangChain v1 migration guide
+  TODO: false
+- id: sy_017
+  category: cross_section
+  question: 我刚装好 openwiki，第一次运行时它让我选模型和填 API 密钥，这些信息最后存在哪儿了？
+  expected_doc_uuids:
+  - 5254427f-5794-20bf-a2b3-9460f1c7ebdb
+  expected_answer_hint: （合成）来自文档：Quickstart
+  TODO: false
+- id: sy_018
+  category: exact_term
+  question: 我跑LangGraph时遇到GRAPH_RECURSION_LIMIT错误，该怎么调高递归限制？
+  expected_doc_uuids:
+  - 67414f81-160b-7a89-89ee-3b7ccd49f016
+  expected_answer_hint: （合成）来自文档：Errors
+  TODO: false
+- id: sy_019
+  category: cross_section
+  question: 我怎么把用户姓名这种固定信息传给LangGraph的每次调用，又不让它在运行中被改掉？
+  expected_doc_uuids:
+  - 4f6869bc-1179-c7f6-42ea-a95791647037
+  expected_answer_hint: （合成）来自文档：Context overview
+  TODO: false
+- id: sy_mt_020
+  category: multi_turn
+  question: 它需要哪些可选依赖包？
+  history:
+  - 怎么用 deepagents 搭建一个能分析 CSV 文件并生成图表的数据分析智能体？
+  expected_doc_uuids:
+  - 47679ce1-b20d-fcb7-dcae-afc5f1d12197
+  expected_answer_hint: （合成）来自文档：Build a data analysis agent
+  TODO: false
+- id: sy_021
+  category: exact_term
+  question: 用 LangChain 调用 embedding 模型时，查文档和搜问题的向量得用同一个方法生成吗？
+  expected_doc_uuids:
+  - cef39dc1-7013-a616-f5d5-55529ef7b29a
+  expected_answer_hint: （合成）来自文档：Embedding model integrations
+  TODO: false
+- id: sy_022
+  category: cross_section
+  question: PDF文档切片后怎么用向量检索找最相关的段落？
+  expected_doc_uuids:
+  - 02cad49c-f4b1-d572-8cd7-c27af45353b0
+  expected_answer_hint: （合成）来自文档：Build a semantic search engine with LangChain
+  TODO: false
+- id: sy_023
+  category: cross_section
+  question: 我该怎么把写死的业务逻辑和大模型调用混在同一个工作流里跑？
+  expected_doc_uuids:
+  - 803f94b0-7950-2a8f-cfe7-3512f3904fc6
+  expected_answer_hint: （合成）来自文档：LangGraph overview
+  TODO: false
+- id: sy_024
+  category: exact_term
+  question: 我的 agent 在 Slack 里跑着跑着想让用户填个表单再继续，怎么实现这个暂停和恢复？
+  expected_doc_uuids:
+  - fada51ec-39a3-4bfe-c6d1-029db5950b7b
+  expected_answer_hint: （合成）来自文档：Prompt Slack users with agent-owned interrupts
+  TODO: false
+- id: sy_mt_025
+  category: multi_turn
+  question: 它现在用的MCPAdapter和以前的MultiServerMCPClient具体咋替换？
+  history:
+  - langchain-mcp-adapters这个旧包要怎么迁移到新的langchain.mcp内置支持啊？
+  expected_doc_uuids:
+  - b71be87b-4caa-08dd-5f84-35aa2765c2e9
+  expected_answer_hint: （合成）来自文档：Migrate from langchain-mcp-adapters
+  TODO: false
+- id: sy_026
+  category: cross_section
+  question: 我装了 GitHub Copilot 的 OpenWiki 插件，重启后在仓库里问“初始化 OpenWiki”没反应，是不是命令写错了？
+  expected_doc_uuids:
+  - 099f0baa-e19c-db1b-c430-0617110db596
+  expected_answer_hint: （合成）来自文档：Coding-agent integrations
+  TODO: false
+- id: sy_027
+  category: cross_section
+  question: 我怎么让自己的LangChain智能体实时调用MCP协议的工具？
+  expected_doc_uuids:
+  - b753d9be-dec9-8db0-57a5-5b0b080115ce
+  expected_answer_hint: （合成）来自文档：Reference
+  TODO: false
+- id: sy_028
+  category: cross_section
+  question: 我的对话历史怎么才能在同一个会话里自动保留，比如用户发了三轮消息后，第三轮还能看到前两轮的内容？
+  expected_doc_uuids:
+  - 4f7202c2-f0ec-bad1-74f3-4149408f1c77
+  expected_answer_hint: （合成）来自文档：Memory overview
+  TODO: false
+- id: sy_029
+  category: cross_section
+  question: 怎么让前端实时展示deep agent里每个子任务的执行进度和沙盒输出？
+  expected_doc_uuids:
+  - f7c439f3-81af-62ca-ebcd-e16bfcca6294
+  expected_answer_hint: （合成）来自文档：Overview
+  TODO: false
+- id: sy_mt_030
+  category: multi_turn
+  question: 它支持哪些类型的模型接口？
+  history:
+  - 怎么用 LangChain 接入 Fireworks AI 的模型呀？
+  expected_doc_uuids:
+  - 5930bd7c-f0dc-d91a-15c1-517658e7f9bd
+  expected_answer_hint: （合成）来自文档：Fireworks integrations
+  TODO: false
+- id: sy_031
+  category: cross_section
+  question: 我用 MCPAdapter 调用 list_tools 后拿到的工具，能直接塞进 create_agent 里用吗？
+  expected_doc_uuids:
+  - a0beec7d-e970-f198-2c60-f11917f6e765
+  expected_answer_hint: （合成）来自文档：Tools
+  TODO: false
+- id: sy_032
+  category: cross_section
+  question: 我有个带多次重试和条件跳转的Agent流程，怎么才能让分支逻辑一目了然又方便团队一起看？
+  expected_doc_uuids:
+  - 7c8299be-e0f2-917b-1f73-02072a9e372e
+  expected_answer_hint: （合成）来自文档：Choosing between Graph and Functional APIs
+  TODO: false
+- id: sy_033
+  category: exact_term
+  question: 我怎么让每个登录用户都有独立的聊天记录，而不是所有人共用同一个对话线程？
+  expected_doc_uuids:
+  - 1d2c1857-db98-3d05-47e5-ef5fbb971bc3
+  expected_answer_hint: （合成）来自文档：Add identity to Managed Deep Agents
+  TODO: false
+- id: sy_034
+  category: cross_section
+  question: 我们项目里还在用 langgraph-supervisor，现在想换成 subagents 模式，具体怎么把 create_supervisor
+    替换成 create_agent 并让子 agent 当工具调用？
+  expected_doc_uuids:
+  - 183ca5c8-09c6-c3d9-5811-d7f666efa00d
+  expected_answer_hint: （合成）来自文档：Migrate from langgraph-supervisor
+  TODO: false
+- id: sy_mt_035
+  category: multi_turn
+  question: 它默认监听的端口是多少？
+  history:
+  - openwiki visualize命令能干啥？
+  expected_doc_uuids:
+  - 89aad564-f150-4ee9-c30e-338f079b39e0
+  expected_answer_hint: （合成）来自文档：Visualize your wiki
+  TODO: false
+- id: sy_036
+  category: exact_term
+  question: 我换用 Anthropic 或 Google 的模型时，代码要改哪些地方？
+  expected_doc_uuids:
+  - d792352d-5779-1d8a-49ea-aa81cf5c3414
+  expected_answer_hint: （合成）来自文档：Providers and models
+  TODO: false
+- id: sy_037
+  category: cross_section
+  question: 我的Agent需要调用本地Python脚本并访问公司内网API，该选Deep Agents还是Claude Agent SDK？
+  expected_doc_uuids:
+  - bef79389-2ece-77a6-c354-c73f59d47584
+  expected_answer_hint: （合成）来自文档：Comparison with Claude Agent SDK
+  TODO: false
+- id: sy_038
+  category: cross_section
+  question: 我用 LangChain 做多智能体协作时，怎么确保每个工具调用都符合公司安全规范？
+  expected_doc_uuids:
+  - 371fed50-574b-d8ae-a476-d86114467268
+  expected_answer_hint: （合成）来自文档：All LangChain Python integration providers
+  TODO: false
+- id: sy_039
+  category: exact_term
+  question: 我的AI返回的消息里有思考过程和最终答案，怎么把这两部分分开提取出来？
+  expected_doc_uuids:
+  - c5bcd8da-214d-b9f8-0681-c66b6f2097b1
+  expected_answer_hint: （合成）来自文档：Reasoning tokens
+  TODO: false
+- id: sy_mt_040
+  category: multi_turn
+  question: 它里面的重试、超时和错误处理这三者，执行顺序是怎么样的？
+  history:
+  - LangGraph里怎么处理节点执行失败的情况？
+  expected_doc_uuids:
+  - 252dbbab-b783-2d9b-ddbb-623876437b58
+  expected_answer_hint: （合成）来自文档：Fault tolerance
+  TODO: false
+- id: sy_041
+  category: cross_section
+  question: 我用 Claude Code 调 Managed Deep Agent 时总 403，API key 没问题，是不是得换 workspace
+    的 key？
+  expected_doc_uuids:
+  - 8715bc04-57c5-f958-4c64-872b4c3d4b24
+  expected_answer_hint: （合成）来自文档：Connect MCP clients to a Managed Deep Agent
+  TODO: false
+- id: sy_042
+  category: exact_term
+  question: 我用 OpenWiki 生成的代码文档，怎么让 Claude Code 这类编码助手自动读到？
+  expected_doc_uuids:
+  - 142b8a6d-cd26-486f-bf42-e1a4025fe77c
+  expected_answer_hint: （合成）来自文档：OpenWiki
+  TODO: false
+- id: sy_043
+  category: cross_section
+  question: 我设了 default 模型，但每次用 /model 切换后它就变了，怎么让默认值一直生效不被覆盖？
+  expected_doc_uuids:
+  - 7abcac99-6ae6-fd65-ec21-bd156159f954
+  expected_answer_hint: （合成）来自文档：Config file
+  TODO: false
+- id: sy_044
+  category: cross_section
+  question: 我用ChatNVIDIA调用本地NIM服务时，怎么传API密钥？
+  expected_doc_uuids:
+  - 5695e829-8983-6e1e-0291-4ab60d211413
+  expected_answer_hint: （合成）来自文档：NVIDIA
+  TODO: false
+- id: sy_mt_045
+  category: multi_turn
+  question: 它具体是怎么保存暂停状态，确保刷新页面后还能从断点接着跑的？
+  history:
+  - Human-in-the-Loop 是怎么让 AI 暂停执行、等人工审核后再继续的？
+  expected_doc_uuids:
+  - 74c0addb-a6b3-d01f-3b4a-6c5494805013
+  expected_answer_hint: （合成）来自文档：Human-in-the-Loop
+  TODO: false
+- id: sy_046
+  category: cross_section
+  question: 父图和子图状态结构不同时，怎么让它们顺利传数据？
+  expected_doc_uuids:
+  - 75bfe097-350d-8db5-85c5-96c1c361ee42
+  expected_answer_hint: （合成）来自文档：Subgraphs
+  TODO: false
+- id: sy_047
+  category: cross_section
+  question: 我用 mda deploy 部署时怎么指定部署到欧洲区而不是默认的美国区？
+  expected_doc_uuids:
+  - 1b7ae3d7-4fc2-9271-fdd7-5ebe136f2a3f
+  expected_answer_hint: （合成）来自文档：Deploy a Managed Deep Agent
+  TODO: false
+- id: sy_048
+  category: exact_term
+  question: 我用 openwiki 生成代码文档时，怎么让它多开几个线程一起处理页面？
+  expected_doc_uuids:
+  - a9223df9-bd51-226d-686e-20d03c2f20ee
+  expected_answer_hint: （合成）来自文档：Code mode
+  TODO: false
+- id: sy_049
+  category: cross_section
+  question: 怎么让主agent和每个子agent的执行进度分开实时推送，而不是混在同一个stream里？
+  expected_doc_uuids:
+  - e5034ea9-8a45-a445-9ee4-6d38b07c0fc8
+  expected_answer_hint: （合成）来自文档：Streaming
+  TODO: false
+- id: sy_mt_050
+  category: multi_turn
+  question: 它对应的下载量数据在哪看？
+  history:
+  - LangChain支持哪些沙箱集成？
+  expected_doc_uuids:
+  - e314b9f7-00da-8fc3-d96f-d7d24428849b
+  expected_answer_hint: （合成）来自文档：Sandbox integrations
+  TODO: false
+- id: sy_051
+  category: exact_term
+  question: 我怎么在工具里拿到调用时传的用户名称？
+  expected_doc_uuids:
+  - c076d594-84fb-8709-bf8c-5a461e6191ee
+  expected_answer_hint: （合成）来自文档：Runtime
+  TODO: false
+- id: sy_052
+  category: cross_section
+  question: 我的客服Agent要实时显示脱敏统计，前端该用什么钩子读取服务端推送的红action-stats数据？
+  expected_doc_uuids:
+  - b2e2dfd7-74f1-fa9c-230a-ddece2e90f75
+  expected_answer_hint: （合成）来自文档：Custom stream channels
+  TODO: false
+- id: sy_053
+  category: cross_section
+  question: 我的工具里怎么拿到调用方的真实身份而不是客户端传的configurable参数？
+  expected_doc_uuids:
+  - 28711518-1aca-2c60-cb73-26e228dcd834
+  expected_answer_hint: （合成）来自文档：Managed Deep Agents runtime
+  TODO: false
+- id: sy_054
+  category: exact_term
+  question: 我的文档更新脚本在 CI 里跑完没生成新内容，是不是漏配了什么环境变量？
+  expected_doc_uuids:
+  - 1743c88c-a192-31a9-5224-b80ac12803e6
+  expected_answer_hint: （合成）来自文档：Automate updates
+  TODO: false
+- id: sy_mt_055
+  category: multi_turn
+  question: 它默认用的是哪种模式？
+  history:
+  - Deep Agents Code有哪几种审批模式，各自有什么区别？
+  expected_doc_uuids:
+  - fc4b4390-74f6-2ab9-b918-e02990c2fd23
+  expected_answer_hint: （合成）来自文档：Approval modes
+  TODO: false
+- id: sy_056
+  category: cross_section
+  question: 我用 LangChain 做搜索工具集成时，哪些服务能免费用且返回网页标题和 URL？
+  expected_doc_uuids:
+  - 46458160-2c65-7289-364a-4ac58d3fb8c1
+  expected_answer_hint: （合成）来自文档：Tool integrations
+  TODO: false
+- id: sy_057
+  category: exact_term
+  question: 我让AI删文件时被暂停了，怎么才能让它跳过这步并告诉AI为啥不能删？
+  expected_doc_uuids:
+  - 40bafb1a-a9d1-6724-80e5-482777ea629f
+  expected_answer_hint: （合成）来自文档：Human-in-the-loop
+  TODO: false
+- id: sy_058
+  category: cross_section
+  question: 我本地跑了个LangChain agent服务，端口是2024，怎么让Agent Chat UI连上它开始聊天？
+  expected_doc_uuids:
+  - 0b4ecb11-1dd2-de2a-0e8b-88d28e864f81
+  expected_answer_hint: （合成）来自文档：Agent Chat UI
+  TODO: false
+- id: sy_059
+  category: cross_section
+  question: 我写了 customer.py 工具，怎么让 agent.py 里能用上它？
+  expected_doc_uuids:
+  - 00f0f685-0ac6-bbf3-348e-cccc44e80932
+  expected_answer_hint: （合成）来自文档：Add custom tools to Managed Deep Agents
+  TODO: false
+- id: sy_mt_060
+  category: multi_turn
+  question: 它支持跨多个仓库的wiki搜索吗？
+  history:
+  - OpenWiki的搜索和链接功能具体是怎么工作的？
+  expected_doc_uuids:
+  - 7d6f27cb-43e1-425c-b43b-f3d822347b6e
+  expected_answer_hint: （合成）来自文档：Search and link wikis
+  TODO: false
