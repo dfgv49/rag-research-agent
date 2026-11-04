@@ -173,3 +173,5 @@ uv.lock
 出题指南.md
 召回率评估与提升指南.md
 改进路线图.md
+eval/reports/*.json
+eval/reports/*.md
